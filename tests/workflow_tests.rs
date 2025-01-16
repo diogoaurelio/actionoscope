@@ -90,7 +90,41 @@ fn test_get_all_steps_since() {
 
     let workflow = Workflow::from_yaml(yaml_data).expect("Failed to parse YAML");
     let job = workflow.get_job("test_job").expect("Job not found");
-    let steps = job.get_all_steps_since("step2");
+    let steps = job.get_all_steps_since("step2", None);
+    assert_eq!(steps.len(), 2);
+    assert_eq!(steps[0].get_name_or_id(), "Step 2");
+    assert_eq!(steps[1].get_name_or_id(), "Step 3");
+}
+
+#[test]
+fn test_get_all_steps_since_and_until() {
+    let yaml_data = r#"
+    name: Test Workflow
+    on:
+      push:
+        branches:
+          - main
+    jobs:
+      test_job:
+        runs-on: ubuntu-latest
+        steps:
+          - name: Step 1
+            id: step1
+            run: echo "Step 1"
+          - name: Step 2
+            id: step2
+            run: echo "Step 2"
+          - name: Step 3
+            id: step3
+            run: echo "Step 3"
+          - name: Step 4
+            id: step4
+            run: echo "Step 4"
+    "#;
+
+    let workflow = Workflow::from_yaml(yaml_data).expect("Failed to parse YAML");
+    let job = workflow.get_job("test_job").expect("Job not found");
+    let steps = job.get_all_steps_since("step2", Some("step3"));
     assert_eq!(steps.len(), 2);
     assert_eq!(steps[0].get_name_or_id(), "Step 2");
     assert_eq!(steps[1].get_name_or_id(), "Step 3");
