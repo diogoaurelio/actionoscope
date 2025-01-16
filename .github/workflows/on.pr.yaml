@@ -1,0 +1,36 @@
+name: Continuous Integration
+
+on:
+  pull_request:
+    types: [ opened, synchronize, reopened ]
+    branches:
+      - '*'
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Prepare environment
+        uses: ./.github/actions/prepare-environment
+
+      - name: Run Format
+        id: format-check
+        run: cargo fmt --all --check
+
+      - name: Run Linter
+        id: lint-check
+        run: cargo clippy -- -D warnings || true
+
+      - name: Run tests
+        id: test
+        run: RUST_BACKTRACE=1 cargo test --all-features
+
