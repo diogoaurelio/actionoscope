@@ -48,16 +48,28 @@ impl Job {
             step.name.as_deref() == Some(id_or_name) || step.id.as_deref() == Some(id_or_name)
         })
     }
-    pub fn get_all_steps_since(&self, id_or_name: &str) -> Vec<&Step> {
+    pub fn get_all_steps_since(
+        &self,
+        start_step_id_or_name: &str,
+        end_step_id_or_name: Option<&str>,
+    ) -> Vec<&Step> {
         let mut steps = Vec::new();
         let mut found = false;
         for step in &self.steps {
-            if step.name.as_deref() == Some(id_or_name) || step.id.as_deref() == Some(id_or_name) {
+            if step.name.as_deref() == Some(start_step_id_or_name)
+                || step.id.as_deref() == Some(start_step_id_or_name)
+            {
                 found = true;
             }
 
             if found {
                 steps.push(step);
+            }
+            if end_step_id_or_name.is_some()
+                && (step.name.as_deref() == end_step_id_or_name
+                    || step.id.as_deref() == end_step_id_or_name)
+            {
+                break;
             }
         }
         steps

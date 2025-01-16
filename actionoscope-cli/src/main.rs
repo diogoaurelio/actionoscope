@@ -28,6 +28,10 @@ struct Cli {
     /// Step name or id to start running from
     #[arg(long, short = 'f')]
     from_step: Option<String>,
+
+    /// Step name or id to start running from
+    #[arg(long, short = 't')]
+    to_step: Option<String>,
 }
 
 fn validate_workflow_file(workflows_dir: &Path, workflow_file: &str) -> Option<PathBuf> {
@@ -100,7 +104,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     if cli.step.is_some() {
         first_step.run_cmd(workflow.env.clone())?;
     } else {
-        for step in &job.get_all_steps_since(step_name) {
+        for step in &job.get_all_steps_since(step_name, cli.to_step.as_deref()) {
             if let Err(e) = step.run_cmd(workflow.env.clone()) {
                 error!("Error running step '{}': {}", step.get_name_or_id(), e);
                 std::process::exit(1);
