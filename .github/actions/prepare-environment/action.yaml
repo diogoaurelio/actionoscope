@@ -1,0 +1,26 @@
+name: Prepare environment
+description: Prepares environment for test & build
+
+runs:
+  using: "composite"
+  steps:
+    - name: System requirements
+      shell: bash
+      run: |
+        sudo apt-get update & sudo apt upgrade -y
+        sudo apt-get install -y build-essential \
+          curl \
+          git
+
+    - name: Install Rust
+      uses: actions-rs/toolchain@v1
+      with:
+        toolchain: stable
+
+    - name: Setup rust fmt
+      shell: bash
+      run: rustup component add rustfmt
+
+    - name: Setup rust clippy
+      shell: bash
+      run: rustup component add clippy
