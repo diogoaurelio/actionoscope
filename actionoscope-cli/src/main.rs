@@ -4,7 +4,7 @@ use log::{error, info};
 use std::path::{Path, PathBuf};
 use std::{env, fs};
 
-use actionoscope::Workflow;
+use actionoscope::{Job, Workflow};
 
 #[derive(Debug, Parser)]
 #[command(name = "actionoscope")]
@@ -19,7 +19,7 @@ struct Cli {
 
     /// Job name to run
     #[arg(long, short = 'j')]
-    job: String,
+    job: Option<String>,
 
     /// Step name or id to run
     #[arg(long, short = 's')]
@@ -92,10 +92,6 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
 
     let cli = Cli::parse();
-    if cli.step.is_none() && cli.from_step.is_none() {
-        error!("Error: Either 'step' or 'from-step' argument must be specified.");
-        std::process::exit(1);
-    }
 
     let workflow_files = find_workflow_files(cli.workflow_file)?;
 
@@ -120,24 +116,58 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             std::process::exit(1);
         });
 
-        let job = workflow.get_job(&cli.job).unwrap_or_else(|| {
-            error!("Job '{}' not found in the workflow", cli.job);
-            std::process::exit(1);
-        });
-
-        let step_name: &str = &cli.step.as_deref().or(cli.from_step.as_deref()).unwrap();
-        let first_step = job.get_step(step_name).unwrap_or_else(|| {
-            error!("Step '{}' not found in the job '{}'", step_name, cli.job);
-            std::process::exit(1);
-        });
-
-        if cli.step.is_some() {
-            first_step.run_cmd(workflow.env.clone())?;
+        let mut jobs: Vec<&Job> = Vec::new();
+        let mut job_names: Vec<String> = Vec::new();
+        if cli.job.is_some() {
+            let job_name = &cli.job.clone().unwrap();
+            let job = workflow.get_job(job_name).unwrap_or_else(|| {
+                error!("Job '{}' not found in the workflow", job_name);
+                std::process::exit(1);
+            });
+            job_names.push(job_name.to_string());
+            jobs.push(job);
         } else {
-            for step in &job.get_all_steps_since(step_name, cli.to_step.as_deref()) {
-                if let Err(e) = step.run_cmd(workflow.env.clone()) {
-                    error!("Error running step '{}': {}", step.get_name_or_id(), e);
+            for (name, job) in &workflow.jobs {
+                job_names.push(name.clone());
+                jobs.push(job);
+            }
+        }
+
+        for (index, job) in jobs.iter().enumerate() {
+            info!("Running job '{}'", job_names[index]);
+            if cli.step.is_some() {
+                let step_name = &cli.step.clone().unwrap();
+                let step = job.get_step(step_name).unwrap_or_else(|| {
+                    error!("Step '{}' not found in the job '{:?}'", step_name, job);
                     std::process::exit(1);
+                });
+                step.run_cmd(workflow.env.clone())?;
+            } else {
+                if cli.from_step.is_some()
+                    && job.get_step(&cli.from_step.clone().unwrap()).is_none()
+                {
+                    error!(
+                        "from-step '{}' not found in the job '{}'",
+                        cli.from_step.clone().unwrap(),
+                        job_names[index]
+                    );
+                    std::process::exit(1);
+                }
+                if cli.to_step.is_some() && job.get_step(&cli.to_step.clone().unwrap()).is_none() {
+                    error!(
+                        "to-step '{}' not found in the job '{}'",
+                        cli.to_step.clone().unwrap(),
+                        job_names[index]
+                    );
+                    std::process::exit(1);
+                }
+                for step in
+                    &job.get_all_steps_since(cli.from_step.as_deref(), cli.to_step.as_deref())
+                {
+                    if let Err(e) = step.run_cmd(workflow.env.clone()) {
+                        error!("Error running step '{}': {}", step.get_name_or_id(), e);
+                        std::process::exit(1);
+                    }
                 }
             }
         }

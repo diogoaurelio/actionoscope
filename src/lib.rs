@@ -1,4 +1,4 @@
-use log::{error, info};
+use log::{error, info, warn};
 use serde::Deserialize;
 use std::io::{BufRead, BufReader};
 use std::process::Command;
@@ -50,14 +50,15 @@ impl Job {
     }
     pub fn get_all_steps_since(
         &self,
-        start_step_id_or_name: &str,
+        start_step_id_or_name: Option<&str>,
         end_step_id_or_name: Option<&str>,
     ) -> Vec<&Step> {
         let mut steps = Vec::new();
         let mut found = false;
         for step in &self.steps {
-            if step.name.as_deref() == Some(start_step_id_or_name)
-                || step.id.as_deref() == Some(start_step_id_or_name)
+            if start_step_id_or_name.is_none()
+                || step.name.as_deref() == start_step_id_or_name
+                || step.id.as_deref() == start_step_id_or_name
             {
                 found = true;
             }
@@ -119,16 +120,24 @@ impl Step {
     ) -> Result<(), Box<dyn std::error::Error>> {
         let step_id = self.get_name_or_id();
         if self.run.is_none() {
-            let err = format!("No run command found for step id/name '{step_id}'");
-            error!(
-                "{}; Step details are:\nname: {}\nid: {}\nuses: {}\nshell: {}",
-                err,
-                self.name.as_deref().unwrap_or("NA"),
-                self.id.as_deref().unwrap_or("NA"),
-                self.uses.as_deref().unwrap_or("NA"),
-                self.shell.as_deref().unwrap_or("NA")
-            );
-            return Err(err.into());
+            if self.uses.is_none() {
+                let err = format!("No run command found for step id/name '{step_id}'");
+                error!(
+                    "{}; Step details are:\nname: {}\nid: {}\nuses: {}\nshell: {}",
+                    err,
+                    self.name.as_deref().unwrap_or("NA"),
+                    self.id.as_deref().unwrap_or("NA"),
+                    self.uses.as_deref().unwrap_or("NA"),
+                    self.shell.as_deref().unwrap_or("NA")
+                );
+                return Err(err.into());
+            } else {
+                warn!(
+                    "Currently, 'uses' is not supported. Skipping step '{}'",
+                    step_id
+                );
+                return Ok(());
+            }
         }
 
         let command = self.run.as_deref().unwrap();
