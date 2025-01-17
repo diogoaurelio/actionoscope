@@ -81,6 +81,49 @@ fn find_workflow_files(
     }
 }
 
+fn run_jobs(
+    jobs: Vec<&Job>,
+    job_names: Vec<String>,
+    cli: &Cli,
+    env_vars: Option<std::collections::HashMap<String, String>>,
+) -> Result<(), Box<dyn std::error::Error>> {
+    for (index, job) in jobs.iter().enumerate() {
+        info!("Running job '{}'", job_names[index]);
+        if cli.step.is_some() {
+            let step_name = &cli.step.clone().unwrap();
+            let step = job.get_step(step_name).unwrap_or_else(|| {
+                error!("Step '{}' not found in the job '{:?}'", step_name, job);
+                std::process::exit(1);
+            });
+            step.run_cmd(env_vars.clone())?;
+        } else {
+            if cli.from_step.is_some() && job.get_step(&cli.from_step.clone().unwrap()).is_none() {
+                error!(
+                    "from-step '{}' not found in the job '{}'",
+                    cli.from_step.clone().unwrap(),
+                    job_names[index]
+                );
+                std::process::exit(1);
+            }
+            if cli.to_step.is_some() && job.get_step(&cli.to_step.clone().unwrap()).is_none() {
+                error!(
+                    "to-step '{}' not found in the job '{}'",
+                    cli.to_step.clone().unwrap(),
+                    job_names[index]
+                );
+                std::process::exit(1);
+            }
+            for step in &job.get_all_steps_since(cli.from_step.as_deref(), cli.to_step.as_deref()) {
+                if let Err(e) = step.run_cmd(env_vars.clone()) {
+                    error!("Error running step '{}': {}", step.get_name_or_id(), e);
+                    std::process::exit(1);
+                }
+            }
+        }
+    }
+    Ok(())
+}
+
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     if env::var("RUST_LOG").is_err() {
         Builder::new()
@@ -93,7 +136,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let cli = Cli::parse();
 
-    let workflow_files = find_workflow_files(cli.workflow_file)?;
+    let workflow_files = find_workflow_files(cli.workflow_file.clone())?;
 
     info!(
         "Found workflow file(s): {}",
@@ -133,44 +176,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             }
         }
 
-        for (index, job) in jobs.iter().enumerate() {
-            info!("Running job '{}'", job_names[index]);
-            if cli.step.is_some() {
-                let step_name = &cli.step.clone().unwrap();
-                let step = job.get_step(step_name).unwrap_or_else(|| {
-                    error!("Step '{}' not found in the job '{:?}'", step_name, job);
-                    std::process::exit(1);
-                });
-                step.run_cmd(workflow.env.clone())?;
-            } else {
-                if cli.from_step.is_some()
-                    && job.get_step(&cli.from_step.clone().unwrap()).is_none()
-                {
-                    error!(
-                        "from-step '{}' not found in the job '{}'",
-                        cli.from_step.clone().unwrap(),
-                        job_names[index]
-                    );
-                    std::process::exit(1);
-                }
-                if cli.to_step.is_some() && job.get_step(&cli.to_step.clone().unwrap()).is_none() {
-                    error!(
-                        "to-step '{}' not found in the job '{}'",
-                        cli.to_step.clone().unwrap(),
-                        job_names[index]
-                    );
-                    std::process::exit(1);
-                }
-                for step in
-                    &job.get_all_steps_since(cli.from_step.as_deref(), cli.to_step.as_deref())
-                {
-                    if let Err(e) = step.run_cmd(workflow.env.clone()) {
-                        error!("Error running step '{}': {}", step.get_name_or_id(), e);
-                        std::process::exit(1);
-                    }
-                }
-            }
-        }
+        run_jobs(jobs, job_names, &cli, workflow.env.clone())?;
     }
 
     Ok(())
