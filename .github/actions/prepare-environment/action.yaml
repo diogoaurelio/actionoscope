@@ -7,15 +7,17 @@ runs:
     - name: System requirements
       shell: bash
       run: |
-        sudo apt-get update & sudo apt upgrade -y
+        sudo apt-get update
         sudo apt-get install -y build-essential \
           curl \
           git
 
     - name: Install Rust
-      uses: actions-rs/toolchain@v1
-      with:
-        toolchain: stable
+      shell: bash
+      run: |
+        curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+        export PATH="$HOME/.cargo/bin:$PATH"
+        echo "$HOME/.cargo/bin:$PATH" >> $GITHUB_PATH
 
     - name: Setup rust fmt
       shell: bash
