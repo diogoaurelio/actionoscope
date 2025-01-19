@@ -47,22 +47,22 @@ actionoscope --help
 ### Running a Single Step
 To run a single step from a workflow file:
 ```shell
-actionoscope --workflow-file <path_to_workflow_file> --job <job_name> --step <step_name>
+actionoscope run --workflow-file <path_to_workflow_file> --job <job_name> --step <step_name>
 ```
 Or with short notation:
 ```shell
-actionoscope -w <path_to_workflow_file> -j <job_name> -s <step_name>
+actionoscope run -w <path_to_workflow_file> -j <job_name> -s <step_name>
 ```
 
 ### Running All Steps Since a Specified Step
 To run all steps from a specified step:
 ```shell
-actionoscope --workflow-file <path_to_workflow_file> --job <job_name> --from-step <step_name>
+actionoscope run --workflow-file <path_to_workflow_file> --job <job_name> --from-step <step_name>
 ```
 
 Or with short notation:
 ```shell
-actionoscope -w <path_to_workflow_file> -j <job_name> -f <starting_step_name>
+actionoscope run -w <path_to_workflow_file> -j <job_name> -f <starting_step_name>
 ```
 
 ### Examples
@@ -88,10 +88,10 @@ jobs:
 ```
 To run the Run tests step from the example workflow file:
 ```shell
-actionoscope --workflow-file example_workflow.yml --job build --step second
+actionoscope run --workflow-file example_workflow.yml --job build --step second
 
 # or using just short notation
-actionoscope -w example_workflow.yml -j build -s second
+actionoscope run -w example_workflow.yml -j build -s second
 ```
 
 ## Development
@@ -101,7 +101,7 @@ To run the tests for the project:
 RUST_BACKTRACE=1 cargo test --all-features
 
 # OR, sprinkling a bit of inception:
-actionoscope -w on.pr.yaml -j build -s test
+actionoscope run -w on.pr.yaml -j build -s test
 
 ```
 
