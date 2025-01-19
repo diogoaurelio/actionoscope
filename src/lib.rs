@@ -1,10 +1,10 @@
 use log::{error, info, warn};
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use std::io::{BufRead, BufReader};
 use std::process::Command;
 use std::thread;
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct Workflow {
     pub name: String,
     pub on: Trigger,
@@ -22,20 +22,20 @@ impl Workflow {
     }
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct Trigger {
     pub push: Option<Push>,
     pub pull_request: Option<serde_yaml::Value>, // Using Value for unstructured data
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct Push {
     pub branches: Option<Vec<String>>,
     pub tags: Option<Vec<String>>,
     pub paths: Option<Vec<String>>,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct Job {
     #[serde(rename = "runs-on")]
     pub runs_on: String,
@@ -77,7 +77,7 @@ impl Job {
     }
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct Step {
     pub name: Option<String>,
     pub id: Option<String>,
