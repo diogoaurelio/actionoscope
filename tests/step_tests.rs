@@ -62,7 +62,7 @@ fn test_run_cmd_with_valid_command() {
         working_directory: None,
         run: Some(String::from("Hello, world!")),
     };
-    assert!(step.run_cmd(None).is_ok());
+    assert!(step.run_cmd(None, None).is_ok());
 }
 
 #[test]
@@ -75,7 +75,7 @@ fn test_run_cmd_with_invalid_command() {
         working_directory: None,
         run: Some(String::from("Hello, world!")),
     };
-    assert!(step.run_cmd(None).is_err());
+    assert!(step.run_cmd(None, None).is_err());
 }
 
 #[test]
@@ -88,5 +88,5 @@ fn test_run_cmd_with_no_run_command() {
         working_directory: None,
         run: None,
     };
-    assert!(step.run_cmd(None).is_err());
+    assert!(step.run_cmd(None, None).is_err());
 }
