@@ -164,7 +164,7 @@ fn ls_command(workflow_file: Option<String>) -> Result<(), Box<dyn std::error::E
             error!("Failed to parse the workflow file: {}", err);
             std::process::exit(1);
         });
-        info!("{:?}", workflow);
+        println!("{:#?}", workflow);
     }
     Ok(())
 }
