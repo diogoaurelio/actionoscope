@@ -30,16 +30,35 @@ enum Commands {
         job: Option<String>,
 
         /// Step name or id to run
-        #[arg(long, short = 's')]
+        #[arg(
+            long,
+            short = 's',
+            help = "Provide a step name or id to specify which step should actionoscope run"
+        )]
         step: Option<String>,
 
         /// Step name or id to start running from
-        #[arg(long, short = 'f')]
+        #[arg(
+            long,
+            short = 'f',
+            help = "Provide a step name or id to specify from which step should actionoscope start running"
+        )]
         from_step: Option<String>,
 
         /// Step name or id to start running from
-        #[arg(long, short = 't')]
+        #[arg(
+            long,
+            short = 't',
+            help = "Provide a step name or id to specify until which step should actionoscope run"
+        )]
         to_step: Option<String>,
+
+        #[arg(
+            long,
+            short = 'e',
+            help = "Path to the .env file that serves as the secrets file"
+        )]
+        secrets_file: Option<String>,
     },
     /// List workflow files
     Ls {
@@ -103,6 +122,7 @@ fn run_jobs(
     from_step: Option<String>,
     to_step: Option<String>,
     env_vars: Option<std::collections::HashMap<String, String>>,
+    secret_vars: Option<std::collections::HashMap<String, String>>,
 ) -> Result<(), Box<dyn std::error::Error>> {
     for (index, job) in jobs.iter().enumerate() {
         info!("Running job '{}'", job_names[index]);
@@ -112,7 +132,7 @@ fn run_jobs(
                 error!("Step '{}' not found in the job '{:?}'", step_name, job);
                 std::process::exit(1);
             });
-            step.run_cmd(env_vars.clone())?;
+            step.run_cmd(env_vars.clone(), secret_vars.clone())?;
         } else {
             if from_step.is_some() && job.get_step(&from_step.clone().unwrap()).is_none() {
                 error!(
@@ -131,7 +151,7 @@ fn run_jobs(
                 std::process::exit(1);
             }
             for step in &job.get_all_steps_since(from_step.as_deref(), to_step.as_deref()) {
-                if let Err(e) = step.run_cmd(env_vars.clone()) {
+                if let Err(e) = step.run_cmd(env_vars.clone(), secret_vars.clone()) {
                     error!("Error running step '{}': {}", step.get_name_or_id(), e);
                     std::process::exit(1);
                 }
@@ -169,14 +189,26 @@ fn ls_command(workflow_file: Option<String>) -> Result<(), Box<dyn std::error::E
     Ok(())
 }
 
+fn load_env_vars(env_file: Option<&str>) -> Option<std::collections::HashMap<String, String>> {
+    if let Some(file) = env_file {
+        dotenv::from_filename(file).ok()?;
+        let env_vars: std::collections::HashMap<String, String> = env::vars().collect();
+        Some(env_vars)
+    } else {
+        return None;
+    }
+}
+
 fn run_command(
     workflow_file: Option<String>,
     job: Option<String>,
     step: Option<String>,
     from_step: Option<String>,
     to_step: Option<String>,
+    secrets_file: Option<String>,
 ) -> Result<(), Box<dyn std::error::Error>> {
     let workflow_files = find_workflow_files(workflow_file.clone())?;
+    let secrets = load_env_vars(secrets_file.as_deref());
 
     info!(
         "Found workflow file(s): {}",
@@ -223,6 +255,7 @@ fn run_command(
             from_step.clone(),
             to_step.clone(),
             workflow.env.clone(),
+            secrets.clone(),
         )?;
     }
 
@@ -248,6 +281,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             step,
             from_step,
             to_step,
+            secrets_file,
             ..
         } => run_command(
             workflow_file.clone(),
@@ -255,6 +289,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             step.clone(),
             from_step.clone(),
             to_step.clone(),
+            secrets_file.clone(),
         ),
         Commands::Ls { workflow_file } => ls_command(workflow_file.clone()),
     }

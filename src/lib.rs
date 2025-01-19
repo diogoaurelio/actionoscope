@@ -98,25 +98,42 @@ impl Step {
     fn replace_env_vars(
         command: &str,
         env_vars: Option<std::collections::HashMap<String, String>>,
+        secret_vars: Option<std::collections::HashMap<String, String>>,
     ) -> String {
-        if env_vars.is_none() {
-            return command.to_string();
+        let mut result = command.to_string();
+
+        if let Some(env_vars) = env_vars {
+            let re = regex::Regex::new(r"\$\{\{\s*env\.(\w+)\s*\}\}").unwrap();
+            result = re
+                .replace_all(&result, |caps: &regex::Captures| {
+                    env_vars
+                        .get(&caps[1])
+                        .cloned()
+                        .or_else(|| std::env::var(&caps[1]).ok())
+                        .unwrap_or_else(|| "".to_string())
+                })
+                .to_string();
         }
-        let env_vars = env_vars.unwrap().clone();
-        let re = regex::Regex::new(r"\$\{\{\s*env\.(\w+)\s*\}\}").unwrap();
-        re.replace_all(command, |caps: &regex::Captures| {
-            env_vars
-                .get(&caps[1])
-                .cloned()
-                .or_else(|| std::env::var(&caps[1]).ok())
-                .unwrap_or_else(|| "".to_string())
-        })
-        .to_string()
+
+        if let Some(secret_vars) = secret_vars {
+            let re = regex::Regex::new(r"\$\{\{\s*secrets\.(\w+)\s*\}\}").unwrap();
+            result = re
+                .replace_all(&result, |caps: &regex::Captures| {
+                    secret_vars
+                        .get(&caps[1])
+                        .cloned()
+                        .unwrap_or_else(|| "".to_string())
+                })
+                .to_string();
+        }
+
+        result
     }
 
     pub fn run_cmd(
         &self,
         env_vars: Option<std::collections::HashMap<String, String>>,
+        secret_vars: Option<std::collections::HashMap<String, String>>,
     ) -> Result<(), Box<dyn std::error::Error>> {
         let step_id = self.get_name_or_id();
         if self.run.is_none() {
@@ -141,7 +158,9 @@ impl Step {
         }
 
         let command = self.run.as_deref().unwrap();
-        let command = Self::replace_env_vars(command, env_vars).trim().to_string();
+        let command = Self::replace_env_vars(command, env_vars, secret_vars)
+            .trim()
+            .to_string();
 
         let shell = self.shell.as_deref().unwrap_or("bash");
         let original_dir = std::env::current_dir()?;
