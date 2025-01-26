@@ -2,6 +2,12 @@
 name = "actionoscope"
 version = "0.1.0"
 edition = "2021"
+authors = ["Diogo Aurelio diogo@mklabs.io"]
+description = "Actionoscope is a CLI tool to run steps from a GitHub Actions workflow locally."
+license = "MIT"
+repository = "https://github.com/diogoaurelio/actionoscope"
+readme = "README.md"
+keywords = ["github-actions", "rust", "devops", "ci", "cd"]
 
 [dependencies]
 log = "0.4"
