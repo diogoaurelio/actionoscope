@@ -1,8 +1,12 @@
-use log::{error, info, warn};
+use log::{debug, error, info, warn};
 use serde::{Deserialize, Serialize};
 use std::io::{BufRead, BufReader};
 use std::process::Command;
-use std::thread;
+use std::{collections, thread};
+
+mod github;
+
+use github::metadata::get_git_repo_vars;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Workflow {
@@ -97,8 +101,9 @@ impl Step {
 
     fn replace_env_vars(
         command: &str,
-        env_vars: Option<std::collections::HashMap<String, String>>,
-        secret_vars: Option<std::collections::HashMap<String, String>>,
+        env_vars: Option<collections::HashMap<String, String>>,
+        secret_vars: Option<collections::HashMap<String, String>>,
+        git_vars: Option<collections::HashMap<String, String>>,
     ) -> String {
         let mut result = command.to_string();
 
@@ -120,6 +125,18 @@ impl Step {
             result = re
                 .replace_all(&result, |caps: &regex::Captures| {
                     secret_vars
+                        .get(&caps[1])
+                        .cloned()
+                        .unwrap_or_else(|| "".to_string())
+                })
+                .to_string();
+        }
+
+        if let Some(git_vars) = git_vars {
+            let re = regex::Regex::new(r"\$\{\{\s*github\.(\w+)\s*\}\}").unwrap();
+            result = re
+                .replace_all(&result, |caps: &regex::Captures| {
+                    git_vars
                         .get(&caps[1])
                         .cloned()
                         .unwrap_or_else(|| "".to_string())
@@ -157,8 +174,16 @@ impl Step {
             }
         }
 
+        let git_vars = match get_git_repo_vars() {
+            Ok(vars) => Some(vars),
+            Err(e) => {
+                debug!("failed to extract git metadata: {}", e);
+                None
+            }
+        };
+
         let command = self.run.as_deref().unwrap();
-        let command = Self::replace_env_vars(command, env_vars, secret_vars)
+        let command = Self::replace_env_vars(command, env_vars, secret_vars, git_vars)
             .trim()
             .to_string();
 
