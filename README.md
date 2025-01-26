@@ -1,13 +1,17 @@
 # Actionoscope
 
 Actionoscope is a CLI tool to run steps from a GitHub Actions workflow locally.
+It is meant to be a simplified version of the very complete project [act](https://github.com/nektos/act). I highly recommend that you look at it. The main difference is that Actionoscope avoids using docker containers to run workflow steps, which in practice means that:
+- it is not able to run any step that uses another action - in fact, it will ignore any step that uses an action; if you need this, please [refer to act](https://github.com/nektos/act);
+- it is faster to run, and will not bloat your local disk with docker images;
 
 ## Motivation
 
 ### what is it for
 
 Avoid the tedious doom loop of pushing endless commits, waiting ages for github runners to pick your workflow, just to find out that there was yet another typo on the CI/CD workflow.
-`actionoscope` is meant to make it dead simple to run locally individual steps (one or multiple) of your GitHub Actions workflow, so you can keep your mental sanity. Nothing more, nothing less.
+`actionoscope` is meant to make it dead simple to run locally individual steps (one or multiple) of your GitHub Actions workflow, so you can keep your mental sanity. 
+Last but not least, it is also meant to be a lightweight alternative to the very awesome [act](https://github.com/nektos/act)
 
 ### what is it _not_ for
 
@@ -18,9 +22,11 @@ Avoid the tedious doom loop of pushing endless commits, waiting ages for github 
 
 ## Features
 
-- Run individual steps from a GitHub Actions workflow.
-- Run all steps from a specified step.
-- Validate workflow files.
+- Automatically detect existing workflows in the current directory repository, and run all or a subset of their steps;
+- Ability to specify to run just a single job from a workflow, or even just a single step;
+- Ability to provide a dot-env file to replace secrets variables;
+- Ability to automatically extract github metadate from the current git repository, namely `${{ github.repository_owner }}`, `${{ github.repository }}`, `${{ github.ref_name }}`;
+- list existing workflows in the current directory repository;
 
 ## Installation
 
@@ -54,7 +60,7 @@ Or with short notation:
 actionoscope run -w <path_to_workflow_file> -j <job_name> -s <step_name>
 ```
 
-### Running All Steps Since a Specified Step
+### Running All Steps Since a given step
 To run all steps from a specified step:
 ```shell
 actionoscope run --workflow-file <path_to_workflow_file> --job <job_name> --from-step <step_name>
@@ -63,6 +69,32 @@ actionoscope run --workflow-file <path_to_workflow_file> --job <job_name> --from
 Or with short notation:
 ```shell
 actionoscope run -w <path_to_workflow_file> -j <job_name> -f <starting_step_name>
+```
+
+### Running All Steps from a given step until another given step
+
+To run a subset of steps:
+```shell
+actionoscope run --workflow-file <name_of_workflow_file> --job <job_name> --from-step <starting_step_name> --to-step <final_step_name>
+```
+Note that the provided steps are inclusive - they will also be run.
+
+Or with short notation:
+```shell
+actionoscope run -w <name_of_workflow_file> -j <job_name> -f <starting_step_name> -t <final_step_name>
+```
+
+### Providing secrets variables
+
+In case you use secrets in your workflow (for example `${{ secrets.MY_VAR }}`), you can provide them using the `--secrets` flag. The secrets should be provided in the format `SECRET_NAME=SECRET_VALUE`. For example:
+
+```shell
+actionoscope run --workflow-file <name_of_workflow_file> -j <job_name> --secrets-file .env
+```
+
+Or with short notation:
+```shell
+actionoscope run -w <name_of_workflow_file> -j <job_name> -e .env
 ```
 
 ### Examples
@@ -103,6 +135,13 @@ RUST_BACKTRACE=1 cargo test --all-features
 # OR, sprinkling a bit of inception:
 actionoscope run -w on.pr.yaml -j build -s test
 
+```
+
+### Running full CI pipeline
+
+To run the full CI pipeline (linter checks and tests), you can simply run:
+```shell
+actionoscope run -w on.pr.yaml
 ```
 
 ## License
