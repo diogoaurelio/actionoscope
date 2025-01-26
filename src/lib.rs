@@ -12,8 +12,8 @@ use github::metadata::get_git_repo_vars;
 pub struct Workflow {
     pub name: String,
     pub on: Trigger,
-    pub jobs: std::collections::HashMap<String, Job>,
-    pub env: Option<std::collections::HashMap<String, String>>,
+    pub jobs: collections::HashMap<String, Job>,
+    pub env: Option<collections::HashMap<String, String>>,
 }
 
 impl Workflow {
@@ -149,8 +149,8 @@ impl Step {
 
     pub fn run_cmd(
         &self,
-        env_vars: Option<std::collections::HashMap<String, String>>,
-        secret_vars: Option<std::collections::HashMap<String, String>>,
+        env_vars: Option<collections::HashMap<String, String>>,
+        secret_vars: Option<collections::HashMap<String, String>>,
     ) -> Result<(), Box<dyn std::error::Error>> {
         let step_id = self.get_name_or_id();
         if self.run.is_none() {
