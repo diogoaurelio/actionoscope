@@ -195,7 +195,7 @@ fn load_env_vars(env_file: Option<&str>) -> Option<std::collections::HashMap<Str
         let env_vars: std::collections::HashMap<String, String> = env::vars().collect();
         Some(env_vars)
     } else {
-        return None;
+        None
     }
 }
 
