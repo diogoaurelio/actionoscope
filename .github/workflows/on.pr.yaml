@@ -28,7 +28,7 @@ jobs:
 
       - name: Run Linter
         id: lint-check
-        run: cargo clippy -- -D warnings || true
+        run: cargo clippy -- -D warnings
 
       - name: Run tests
         id: test
