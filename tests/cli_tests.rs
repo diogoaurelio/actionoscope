@@ -2,9 +2,11 @@ use assert_cmd::Command;
 use predicates::prelude::*;
 use std::fs;
 
+const APP_NAME: &str = "actionoscope";
+
 #[test]
 fn test_run_single_step() {
-    let mut cmd = Command::cargo_bin("actionoscope").unwrap();
+    let mut cmd = Command::cargo_bin(APP_NAME).unwrap();
     cmd.arg("run")
         .arg("--workflow-file")
         .arg("test_workflow.yml")
@@ -20,7 +22,7 @@ fn test_run_single_step() {
 
 #[test]
 fn test_run_single_step_invalid_job() {
-    let mut cmd = Command::cargo_bin("actionoscope").unwrap();
+    let mut cmd = Command::cargo_bin(APP_NAME).unwrap();
     cmd.arg("run")
         .arg("--workflow-file")
         .arg("test_workflow.yml")
@@ -34,7 +36,7 @@ fn test_run_single_step_invalid_job() {
 
 #[test]
 fn test_run_single_step_invalid_step() {
-    let mut cmd = Command::cargo_bin("actionoscope").unwrap();
+    let mut cmd = Command::cargo_bin(APP_NAME).unwrap();
     cmd.arg("run")
         .arg("--workflow-file")
         .arg("test_workflow.yml")
@@ -48,7 +50,7 @@ fn test_run_single_step_invalid_step() {
 
 #[test]
 fn test_run_all_steps_since_invalid_step() {
-    let mut cmd = Command::cargo_bin("actionoscope").unwrap();
+    let mut cmd = Command::cargo_bin(APP_NAME).unwrap();
     cmd.arg("run")
         .arg("--workflow-file")
         .arg("test_workflow.yml")
@@ -62,7 +64,7 @@ fn test_run_all_steps_since_invalid_step() {
 
 #[test]
 fn test_run_all_steps_since() {
-    let mut cmd = Command::cargo_bin("actionoscope").unwrap();
+    let mut cmd = Command::cargo_bin(APP_NAME).unwrap();
     cmd.arg("run")
         .arg("--workflow-file")
         .arg("test_workflow.yml")
