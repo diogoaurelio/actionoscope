@@ -84,6 +84,20 @@ Or with short notation:
 actionoscope run -w <name_of_workflow_file> -j <job_name> -f <starting_step_name> -t <final_step_name>
 ```
 
+### Running All Steps except some that should be skipped
+
+To run some steps except a few that should be skipped, you can use the `--skip-step` flag. You can specify multiple steps to skip by using the flag multiple times. For example, to skip `step-x` and `step-y`:
+```shell
+actionoscope run --workflow-file <name_of_workflow_file> --job <job_name> --skip-step <step-x> --skip-step <step-y>
+```
+
+Note that the match is done by name or id, so you can use either the name of the step or its id as defined in the workflow file.
+
+Or with short notation:
+```shell
+actionoscope run -w <name_of_workflow_file> -j <job_name> -k <step-x> -k <step-y>
+```
+
 ### Providing secrets variables
 
 In case you use secrets in your workflow (for example `${{ secrets.MY_VAR }}`), you can provide them using the `--secrets` flag. The secrets should be provided in the format `SECRET_NAME=SECRET_VALUE`. For example:
