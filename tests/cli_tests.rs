@@ -135,6 +135,33 @@ fn test_run_all_steps_since() {
     let _ = TearDownTestContext::new(clean_up_fn);
 }
 
+#[test]
+fn test_run_all_steps_except_skip_steps() {
+    let tmp_path = create_temp_directory("test_run_all_steps_except_skip_steps")
+        .expect("Failed to create temporary directory for test");
+    let file_path = tmp_path.join(TEST_FILE_NAME);
+    let clean_up_fn = create_clean_up_test_workflow_file(file_path.clone());
+    setup_test_workflow(file_path.clone());
+
+    let mut cmd = Command::cargo_bin(APP_NAME).unwrap();
+    cmd.arg("run")
+        .arg("--workflow-file")
+        .arg(file_path)
+        .arg("--job")
+        .arg("test_job")
+        .arg("--skip-step")
+        .arg("step2")
+        .arg("--skip-step")
+        .arg("step4");
+
+    cmd.assert()
+        .success()
+        .stdout(predicate::str::contains("Running step name/id 'Step 1'"))
+        .stdout(predicate::str::contains("Running step name/id 'Step 3'"));
+
+    let _ = TearDownTestContext::new(clean_up_fn);
+}
+
 fn setup_test_workflow(file_path: PathBuf) {
     let workflow_content: &str = r#"
     name: Test Workflow

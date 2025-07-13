@@ -1,6 +1,7 @@
 use clap::{Parser, Subcommand};
 use env_logger::{Builder, Target};
 use log::{error, info};
+use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 use std::{env, fs};
 
@@ -59,6 +60,10 @@ enum Commands {
             help = "Path to the .env file that serves as the secrets file"
         )]
         secrets_file: Option<String>,
+
+        /// Skip one or more steps
+        #[arg(long, short = 'k', help = "Steps to skip")]
+        skip_step: Vec<String>,
     },
     /// List workflow files
     Ls {
@@ -66,6 +71,17 @@ enum Commands {
         #[arg(long, short = 'w')]
         workflow_file: Option<String>,
     },
+}
+
+struct RunJobConfig<'a> {
+    jobs: Vec<&'a Job>,
+    job_names: Vec<String>,
+    step: Option<String>,
+    from_step: Option<String>,
+    to_step: Option<String>,
+    env_vars: Option<HashMap<String, String>>,
+    secret_vars: Option<HashMap<String, String>>,
+    steps_to_skip: Vec<String>,
 }
 
 fn validate_workflow_file(workflows_dir: &Path, workflow_file: &str) -> Option<PathBuf> {
@@ -115,43 +131,49 @@ fn find_workflow_files(
     }
 }
 
-fn run_jobs(
-    jobs: Vec<&Job>,
-    job_names: Vec<String>,
-    step: Option<String>,
-    from_step: Option<String>,
-    to_step: Option<String>,
-    env_vars: Option<std::collections::HashMap<String, String>>,
-    secret_vars: Option<std::collections::HashMap<String, String>>,
-) -> Result<(), Box<dyn std::error::Error>> {
+fn run_jobs(config: RunJobConfig) -> Result<(), Box<dyn std::error::Error>> {
+    let jobs = &config.jobs;
     for (index, job) in jobs.iter().enumerate() {
-        info!("Running job '{}'", job_names[index]);
-        if step.is_some() {
-            let step_name = &step.clone().unwrap();
+        info!("Running job '{}'", &config.job_names[index]);
+        if config.step.is_some() {
+            let step_name = &config.step.clone().unwrap();
             let step = job.get_step(step_name).unwrap_or_else(|| {
                 error!("Step '{}' not found in the job '{:?}'", step_name, job);
                 std::process::exit(1);
             });
-            step.run_cmd(env_vars.clone(), secret_vars.clone())?;
+            step.run_cmd(config.env_vars.clone(), config.secret_vars.clone())?;
         } else {
-            if from_step.is_some() && job.get_step(&from_step.clone().unwrap()).is_none() {
+            if config.from_step.is_some()
+                && job.get_step(&config.from_step.clone().unwrap()).is_none()
+            {
                 error!(
                     "from-step '{}' not found in the job '{}'",
-                    from_step.clone().unwrap(),
-                    job_names[index]
+                    &config.from_step.clone().unwrap(),
+                    &config.job_names[index]
                 );
                 std::process::exit(1);
             }
-            if to_step.is_some() && job.get_step(&to_step.clone().unwrap()).is_none() {
+            if config.to_step.is_some() && job.get_step(&config.to_step.clone().unwrap()).is_none()
+            {
                 error!(
                     "to-step '{}' not found in the job '{}'",
-                    to_step.clone().unwrap(),
-                    job_names[index]
+                    &config.to_step.clone().unwrap(),
+                    &config.job_names[index]
                 );
                 std::process::exit(1);
             }
-            for step in &job.get_all_steps_since(from_step.as_deref(), to_step.as_deref()) {
-                if let Err(e) = step.run_cmd(env_vars.clone(), secret_vars.clone()) {
+            for step in
+                &job.get_all_steps_since(config.from_step.as_deref(), config.to_step.as_deref())
+            {
+                if config
+                    .steps_to_skip
+                    .iter()
+                    .any(|s| s == step.get_id() || s == step.get_name())
+                {
+                    info!("Skipping step '{}'", step.get_name_or_id());
+                    continue;
+                }
+                if let Err(e) = step.run_cmd(config.env_vars.clone(), config.secret_vars.clone()) {
                     error!("Error running step '{}': {}", step.get_name_or_id(), e);
                     std::process::exit(1);
                 }
@@ -206,6 +228,7 @@ fn run_command(
     from_step: Option<String>,
     to_step: Option<String>,
     secrets_file: Option<String>,
+    steps_to_skip: Vec<String>,
 ) -> Result<(), Box<dyn std::error::Error>> {
     let workflow_files = find_workflow_files(workflow_file.clone())?;
     let secrets = load_env_vars(secrets_file.as_deref());
@@ -247,16 +270,18 @@ fn run_command(
                 jobs.push(job);
             }
         }
+        let job_config = RunJobConfig {
+            jobs: jobs.clone(),
+            job_names: job_names.clone(),
+            step: step.clone(),
+            from_step: from_step.clone(),
+            to_step: to_step.clone(),
+            env_vars: workflow.env.clone(),
+            secret_vars: secrets.clone(),
+            steps_to_skip: steps_to_skip.to_owned(),
+        };
 
-        run_jobs(
-            jobs,
-            job_names,
-            step.clone(),
-            from_step.clone(),
-            to_step.clone(),
-            workflow.env.clone(),
-            secrets.clone(),
-        )?;
+        run_jobs(job_config)?;
     }
 
     Ok(())
@@ -282,6 +307,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             from_step,
             to_step,
             secrets_file,
+            skip_step: steps_to_skip,
             ..
         } => run_command(
             workflow_file.clone(),
@@ -290,6 +316,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             from_step.clone(),
             to_step.clone(),
             secrets_file.clone(),
+            steps_to_skip.to_owned(),
         ),
         Commands::Ls { workflow_file } => ls_command(workflow_file.clone()),
     }
