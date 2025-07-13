@@ -1,16 +1,37 @@
 use assert_cmd::Command;
 use predicates::prelude::*;
-use std::fs;
+use std::fs::File;
+use std::io::Write;
+use std::path::PathBuf;
+
+mod file_utils;
+mod test_context;
+
+use crate::file_utils::rm_file;
+use file_utils::create_temp_directory;
+use test_context::TearDownTestContext;
 
 const APP_NAME: &str = "actionoscope";
 const TEST_FILE_NAME: &str = "test_workflow.yml";
 
+fn create_clean_up_test_workflow_file(file_path: PathBuf) -> impl FnOnce() {
+    move || {
+        rm_file(&file_path, true).expect("Failed to remove test workflow file");
+    }
+}
+
 #[test]
 fn test_run_single_step() {
+    let tmp_path = create_temp_directory("test_run_single_step")
+        .expect("Failed to create temporary directory for test");
+    let file_path = tmp_path.join(TEST_FILE_NAME);
+    let clean_up_fn = create_clean_up_test_workflow_file(file_path.clone());
+    setup_test_workflow(file_path.clone());
+
     let mut cmd = Command::cargo_bin(APP_NAME).unwrap();
     cmd.arg("run")
         .arg("--workflow-file")
-        .arg(TEST_FILE_NAME)
+        .arg(file_path)
         .arg("--job")
         .arg("test_job")
         .arg("--step")
@@ -19,56 +40,88 @@ fn test_run_single_step() {
     cmd.assert()
         .success()
         .stdout(predicate::str::contains("Running step name/id 'Step 1'"));
+
+    let _ = TearDownTestContext::new(clean_up_fn);
 }
 
 #[test]
 fn test_run_single_step_invalid_job() {
+    let tmp_path = create_temp_directory("test_run_single_step_invalid_job")
+        .expect("Failed to create temporary directory for test");
+    let file_path = tmp_path.join(TEST_FILE_NAME);
+    let clean_up_fn = create_clean_up_test_workflow_file(file_path.clone());
+    setup_test_workflow(file_path.clone());
+
     let mut cmd = Command::cargo_bin(APP_NAME).unwrap();
     cmd.arg("run")
         .arg("--workflow-file")
-        .arg(TEST_FILE_NAME)
+        .arg(file_path)
         .arg("--job")
         .arg("invalid_job")
         .arg("--step")
         .arg("step1");
 
     cmd.assert().failure();
+
+    let _ = TearDownTestContext::new(clean_up_fn);
 }
 
 #[test]
 fn test_run_single_step_invalid_step() {
+    let tmp_path = create_temp_directory("test_run_single_step_invalid_step")
+        .expect("Failed to create temporary directory for test");
+    let file_path = tmp_path.join(TEST_FILE_NAME);
+    let clean_up_fn = create_clean_up_test_workflow_file(file_path.clone());
+    setup_test_workflow(file_path.clone());
+
     let mut cmd = Command::cargo_bin(APP_NAME).unwrap();
     cmd.arg("run")
         .arg("--workflow-file")
-        .arg(TEST_FILE_NAME)
+        .arg(file_path)
         .arg("--job")
         .arg("test_job")
         .arg("--step")
         .arg("invalid_step");
 
     cmd.assert().failure();
+
+    let _ = TearDownTestContext::new(clean_up_fn);
 }
 
 #[test]
 fn test_run_all_steps_since_invalid_step() {
+    let tmp_path = create_temp_directory("test_run_all_steps_since_invalid_step")
+        .expect("Failed to create temporary directory for test");
+    let file_path = tmp_path.join(TEST_FILE_NAME);
+    let clean_up_fn = create_clean_up_test_workflow_file(file_path.clone());
+    setup_test_workflow(file_path.clone());
+
     let mut cmd = Command::cargo_bin(APP_NAME).unwrap();
     cmd.arg("run")
         .arg("--workflow-file")
-        .arg(TEST_FILE_NAME)
+        .arg(file_path)
         .arg("--job")
         .arg("test_job")
         .arg("--from-step")
         .arg("invalid_step");
 
     cmd.assert().failure();
+
+    let _ = TearDownTestContext::new(clean_up_fn);
 }
 
 #[test]
 fn test_run_all_steps_since() {
+    let tmp_path = create_temp_directory("test_run_all_steps_since")
+        .expect("Failed to create temporary directory for test");
+    let file_path = tmp_path.join(TEST_FILE_NAME);
+    let clean_up_fn = create_clean_up_test_workflow_file(file_path.clone());
+    setup_test_workflow(file_path.clone());
+
     let mut cmd = Command::cargo_bin(APP_NAME).unwrap();
     cmd.arg("run")
         .arg("--workflow-file")
-        .arg(TEST_FILE_NAME)
+        .arg(file_path)
         .arg("--job")
         .arg("test_job")
         .arg("--from-step")
@@ -78,10 +131,12 @@ fn test_run_all_steps_since() {
         .success()
         .stdout(predicate::str::contains("Running step name/id 'Step 2'"))
         .stdout(predicate::str::contains("Running step name/id 'Step 3'"));
+
+    let _ = TearDownTestContext::new(clean_up_fn);
 }
 
-fn setup_test_workflow() {
-    let workflow_content = r#"
+fn setup_test_workflow(file_path: PathBuf) {
+    let workflow_content: &str = r#"
     name: Test Workflow
     on:
       push:
@@ -104,11 +159,6 @@ fn setup_test_workflow() {
             id: step4
             run: echo "Step 4"
     "#;
-
-    fs::write(TEST_FILE_NAME, workflow_content).unwrap();
-}
-
-#[ctor::ctor]
-fn init() {
-    setup_test_workflow();
+    let mut file = File::create(&file_path).expect("Failed to create file");
+    writeln!(file, "{}", workflow_content).expect("Failed to write to file");
 }
