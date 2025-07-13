@@ -99,6 +99,14 @@ impl Step {
             .unwrap_or(self.id.as_deref().unwrap_or("unknown"))
     }
 
+    pub fn get_id(&self) -> &str {
+        self.id.as_deref().unwrap_or("unknown")
+    }
+
+    pub fn get_name(&self) -> &str {
+        self.name.as_deref().unwrap_or("unknown")
+    }
+
     fn replace_env_vars(
         command: &str,
         env_vars: Option<collections::HashMap<String, String>>,
