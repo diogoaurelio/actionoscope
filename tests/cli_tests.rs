@@ -3,13 +3,14 @@ use predicates::prelude::*;
 use std::fs;
 
 const APP_NAME: &str = "actionoscope";
+const TEST_FILE_NAME: &str = "test_workflow.yml";
 
 #[test]
 fn test_run_single_step() {
     let mut cmd = Command::cargo_bin(APP_NAME).unwrap();
     cmd.arg("run")
         .arg("--workflow-file")
-        .arg("test_workflow.yml")
+        .arg(TEST_FILE_NAME)
         .arg("--job")
         .arg("test_job")
         .arg("--step")
@@ -25,7 +26,7 @@ fn test_run_single_step_invalid_job() {
     let mut cmd = Command::cargo_bin(APP_NAME).unwrap();
     cmd.arg("run")
         .arg("--workflow-file")
-        .arg("test_workflow.yml")
+        .arg(TEST_FILE_NAME)
         .arg("--job")
         .arg("invalid_job")
         .arg("--step")
@@ -39,7 +40,7 @@ fn test_run_single_step_invalid_step() {
     let mut cmd = Command::cargo_bin(APP_NAME).unwrap();
     cmd.arg("run")
         .arg("--workflow-file")
-        .arg("test_workflow.yml")
+        .arg(TEST_FILE_NAME)
         .arg("--job")
         .arg("test_job")
         .arg("--step")
@@ -53,7 +54,7 @@ fn test_run_all_steps_since_invalid_step() {
     let mut cmd = Command::cargo_bin(APP_NAME).unwrap();
     cmd.arg("run")
         .arg("--workflow-file")
-        .arg("test_workflow.yml")
+        .arg(TEST_FILE_NAME)
         .arg("--job")
         .arg("test_job")
         .arg("--from-step")
@@ -67,7 +68,7 @@ fn test_run_all_steps_since() {
     let mut cmd = Command::cargo_bin(APP_NAME).unwrap();
     cmd.arg("run")
         .arg("--workflow-file")
-        .arg("test_workflow.yml")
+        .arg(TEST_FILE_NAME)
         .arg("--job")
         .arg("test_job")
         .arg("--from-step")
@@ -104,7 +105,7 @@ fn setup_test_workflow() {
             run: echo "Step 4"
     "#;
 
-    fs::write("test_workflow.yml", workflow_content).unwrap();
+    fs::write(TEST_FILE_NAME, workflow_content).unwrap();
 }
 
 #[ctor::ctor]
