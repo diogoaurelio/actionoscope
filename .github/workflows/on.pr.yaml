@@ -17,9 +17,11 @@ jobs:
     timeout-minutes: 10
     steps:
       - name: Checkout code
+        id: checkout
         uses: actions/checkout@v4
 
       - name: Prepare environment
+        id: prepare-env
         uses: ./.github/actions/prepare-environment
 
       - name: Run Format
