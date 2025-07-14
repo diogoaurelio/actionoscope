@@ -97,7 +97,7 @@ fn find_workflow_files(
             result.push(path);
             return Ok(result);
         }
-        let err = format!("Provided workflow file {} was not found", workflow_file);
+        let err = format!("Provided workflow file {workflow_file} was not found");
         return Err(err.into());
     }
     for entry in fs::read_dir(workflows_dir)? {
@@ -184,7 +184,7 @@ fn ls_command(workflow_file: Option<String>) -> Result<(), Box<dyn std::error::E
             error!("Failed to parse the workflow file: {}", err);
             std::process::exit(1);
         });
-        println!("{:#?}", workflow);
+        println!("{workflow:#?}");
     }
     Ok(())
 }
