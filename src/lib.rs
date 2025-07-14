@@ -215,7 +215,7 @@ impl Step {
             let stdout_reader = BufReader::new(stdout);
             for line in stdout_reader.lines() {
                 let line = line.unwrap();
-                println!("[cmd]: {}", line);
+                println!("[cmd]: {line}");
             }
         });
 
@@ -223,7 +223,7 @@ impl Step {
             let stderr_reader = BufReader::new(stderr);
             for line in stderr_reader.lines() {
                 let line = line.unwrap();
-                println!("[cmd]: {}", line);
+                println!("[cmd]: {line}");
             }
         });
 
@@ -237,7 +237,7 @@ impl Step {
             info!("Step '{step_id}' was executed successfully");
             Ok(())
         } else {
-            let err = format!("Step '{step_id}' failed with status: {}", status);
+            let err = format!("Step '{step_id}' failed with status: {status}");
             error!("{}", err);
             Err(err.into())
         }
