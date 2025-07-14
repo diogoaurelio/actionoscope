@@ -215,7 +215,7 @@ impl Step {
             let stdout_reader = BufReader::new(stdout);
             for line in stdout_reader.lines() {
                 let line = line.unwrap();
-                println!("[cmd]: {line}");
+                println!("[stdout]: {line}");
             }
         });
 
@@ -223,7 +223,7 @@ impl Step {
             let stderr_reader = BufReader::new(stderr);
             for line in stderr_reader.lines() {
                 let line = line.unwrap();
-                println!("[cmd]: {line}");
+                println!("[stdout]: {line}");
             }
         });
 
