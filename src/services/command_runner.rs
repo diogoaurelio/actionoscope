@@ -30,30 +30,11 @@ impl GithubStepCommandRunner {
     pub fn replace_env_vars(&self, command: &str) -> String {
         let mut result = command.to_string();
 
-        if let Some(env_vars) = self.env_vars.to_owned() {
-            let re = regex::Regex::new(r"\$\{\{\s*env\.(\w+)\s*\}\}").unwrap();
-            result = re
-                .replace_all(&result, |caps: &regex::Captures| {
-                    env_vars
-                        .get(&caps[1])
-                        .cloned()
-                        .or_else(|| std::env::var(&caps[1]).ok())
-                        .unwrap_or_else(|| "".to_string())
-                })
-                .to_string();
-        }
+        let env_vars_regex = r"\$\{\{\s*env\.(\w+)\s*\}\}";
+        result = Self::replace_vars(&result, self.env_vars.to_owned(), env_vars_regex);
 
-        if let Some(secret_vars) = self.secret_vars.to_owned() {
-            let re = regex::Regex::new(r"\$\{\{\s*secrets\.(\w+)\s*\}\}").unwrap();
-            result = re
-                .replace_all(&result, |caps: &regex::Captures| {
-                    secret_vars
-                        .get(&caps[1])
-                        .cloned()
-                        .unwrap_or_else(|| "".to_string())
-                })
-                .to_string();
-        }
+        let secret_vars_regex = r"\$\{\{\s*secrets\.(\w+)\s*\}\}";
+        result = Self::replace_vars(&result, self.secret_vars.to_owned(), secret_vars_regex);
 
         let git_vars = match get_git_repo_vars() {
             Ok(vars) => Some(vars),
@@ -62,12 +43,24 @@ impl GithubStepCommandRunner {
                 None
             }
         };
+        let github_vars_regex = r"\$\{\{\s*github\.(\w+)\s*\}\}";
+        result = Self::replace_vars(&result, git_vars.to_owned(), github_vars_regex);
 
-        if let Some(git_vars) = git_vars.to_owned() {
-            let re = regex::Regex::new(r"\$\{\{\s*github\.(\w+)\s*\}\}").unwrap();
+        result
+    }
+
+    fn replace_vars(
+        command: &str,
+        inputs: Option<collections::HashMap<String, String>>,
+        regex: &str,
+    ) -> String {
+        let mut result = command.to_string();
+
+        if let Some(inputs) = inputs {
+            let re = regex::Regex::new(regex).unwrap();
             result = re
                 .replace_all(&result, |caps: &regex::Captures| {
-                    git_vars
+                    inputs
                         .get(&caps[1])
                         .cloned()
                         .unwrap_or_else(|| "".to_string())
