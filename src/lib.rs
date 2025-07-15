@@ -40,38 +40,6 @@ pub struct Push {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-pub struct Action {
-    pub name: String,
-    pub description: Option<String>,
-    pub runs: Vec<ActionBody>,
-    pub inputs: Option<collections::HashMap<String, ActionVariableInput>>,
-}
-
-impl Action {
-    pub fn from_yaml(yaml_data: &str) -> Result<Self, serde_yaml::Error> {
-        serde_yaml::from_str(yaml_data)
-    }
-}
-
-#[derive(Debug, Serialize, Deserialize)]
-pub struct ActionVariableInput {
-    pub description: Option<String>,
-    pub required: bool,
-    pub default: Option<String>,
-}
-
-#[derive(Debug, Serialize, Deserialize)]
-pub struct ActionBody {
-    // there are numerous options for using, so many that not considering using an enum;
-    // here are some examples: composite / docker / node16 / ...
-    pub using: String,
-    pub image: Option<String>,
-    pub main: Option<String>,
-    // steps are used only for composite actions
-    pub steps: Option<Vec<Step>>,
-}
-
-#[derive(Debug, Serialize, Deserialize)]
 pub struct Job {
     #[serde(rename = "runs-on")]
     pub runs_on: String,
@@ -194,32 +162,23 @@ impl Step {
     ) -> Result<(), Box<dyn std::error::Error>> {
         let step_id = self.get_name_or_id();
         if self.run.is_none() {
-            match self.uses {
-                Some(ref uses) => {
-                    if uses.starts_with("./") {
-                        info!(
-                            "Running local action '{uses}' for step '{step_id}'",
-                        );
-                        return Ok(());
-                    }
-                    warn!(
-                        "Currently, 'uses' is not supported. Skipping step '{}'",
-                        step_id
-                    );
-                    return Ok(());
-                }
-                None => {
-                    let err = format!("No run command found for step id/name '{step_id}'");
-                    error!(
-                        "{}; Step details are:\nname: {}\nid: {}\nuses: {}\nshell: {}",
-                        err,
-                        self.name.as_deref().unwrap_or("NA"),
-                        self.id.as_deref().unwrap_or("NA"),
-                        self.uses.as_deref().unwrap_or("NA"),
-                        self.shell.as_deref().unwrap_or("NA")
-                    );
-                    return Err(err.into());
-                }
+            if self.uses.is_none() {
+                let err = format!("No run command found for step id/name '{step_id}'");
+                error!(
+                    "{}; Step details are:\nname: {}\nid: {}\nuses: {}\nshell: {}",
+                    err,
+                    self.name.as_deref().unwrap_or("NA"),
+                    self.id.as_deref().unwrap_or("NA"),
+                    self.uses.as_deref().unwrap_or("NA"),
+                    self.shell.as_deref().unwrap_or("NA")
+                );
+                return Err(err.into());
+            } else {
+                warn!(
+                    "Currently, 'uses' is not supported. Skipping step '{}'",
+                    step_id
+                );
+                return Ok(());
             }
         }
 
