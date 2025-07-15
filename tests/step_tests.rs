@@ -1,6 +1,5 @@
 use actionoscope::models::github_workflows::Step;
-use actionoscope::CommandRunner;
-use actionoscope::GithubStepCommandRunner;
+use actionoscope::services::command_runner::{CommandRunner, GithubStepCommandRunner};
 
 #[test]
 fn test_get_name_or_id_with_name() {
