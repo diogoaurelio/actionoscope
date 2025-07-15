@@ -1,4 +1,6 @@
-use actionoscope::Step;
+use actionoscope::models::github_workflows::Step;
+use actionoscope::CommandRunner;
+use actionoscope::GithubStepCommandRunner;
 
 #[test]
 fn test_get_name_or_id_with_name() {
@@ -87,9 +89,11 @@ fn test_run_cmd_with_valid_command() {
         working_directory: None,
         run: Some(String::from("Hello, world!")),
     };
+    // Given: a command runner instance without any special params (env vars or secrets)
+    let command_runner = GithubStepCommandRunner::new(None, None);
 
     // When: The method run_cmd is called
-    let result = step.run_cmd(None, None);
+    let result = command_runner.run(&step);
 
     // Then: The result should indicate success
     assert!(result.is_ok());
@@ -106,9 +110,11 @@ fn test_run_cmd_with_invalid_command() {
         working_directory: None,
         run: Some(String::from("Hello, world!")),
     };
+    // Given: a command runner instance without any special params (env vars or secrets)
+    let command_runner = GithubStepCommandRunner::new(None, None);
 
     // When: The method run_cmd is called
-    let result = step.run_cmd(None, None);
+    let result = command_runner.run(&step);
 
     // Then: The result should indicate an error
     assert!(result.is_err());
@@ -125,9 +131,11 @@ fn test_run_cmd_with_no_run_command() {
         working_directory: None,
         run: None,
     };
+    // Given: a command runner instance without any special params (env vars or secrets)
+    let command_runner = GithubStepCommandRunner::new(None, None);
 
     // When: The method run_cmd is called
-    let result = step.run_cmd(None, None);
+    let result = command_runner.run(&step);
 
     // Then: The result should indicate an error
     assert!(result.is_err());

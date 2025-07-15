@@ -5,7 +5,8 @@ use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 use std::{env, fs};
 
-use actionoscope::{Job, Workflow};
+use actionoscope::models::github_workflows::{Job, Workflow};
+use actionoscope::{CommandRunner, GithubStepCommandRunner};
 
 #[derive(Debug, Parser)]
 #[command(name = "actionoscope")]
@@ -133,6 +134,8 @@ fn find_workflow_files(
 
 fn run_jobs(config: RunJobConfig) -> Result<(), Box<dyn std::error::Error>> {
     let jobs = &config.jobs;
+    let command_runner =
+        GithubStepCommandRunner::new(config.env_vars.clone(), config.secret_vars.clone());
     for (index, job) in jobs.iter().enumerate() {
         info!("Running job '{}'", &config.job_names[index]);
         if config.step.is_some() {
@@ -141,7 +144,7 @@ fn run_jobs(config: RunJobConfig) -> Result<(), Box<dyn std::error::Error>> {
                 error!("Step '{}' not found in the job '{:?}'", step_name, job);
                 std::process::exit(1);
             });
-            step.run_cmd(config.env_vars.clone(), config.secret_vars.clone())?;
+            command_runner.run(step)?;
         } else {
             if config.from_step.is_some()
                 && job.get_step(&config.from_step.clone().unwrap()).is_none()
@@ -173,7 +176,7 @@ fn run_jobs(config: RunJobConfig) -> Result<(), Box<dyn std::error::Error>> {
                     info!("Skipping step '{}'", step.get_name_or_id());
                     continue;
                 }
-                if let Err(e) = step.run_cmd(config.env_vars.clone(), config.secret_vars.clone()) {
+                if let Err(e) = command_runner.run(step) {
                     error!("Error running step '{}': {}", step.get_name_or_id(), e);
                     std::process::exit(1);
                 }

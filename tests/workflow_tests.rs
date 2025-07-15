@@ -1,4 +1,4 @@
-use actionoscope::Workflow;
+use actionoscope::models::github_workflows::Workflow;
 
 #[test]
 fn test_workflow_from_yaml() {
