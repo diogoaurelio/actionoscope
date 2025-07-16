@@ -14,16 +14,19 @@ pub trait CommandRunner {
 pub struct GithubStepCommandRunner {
     pub env_vars: Option<collections::HashMap<String, String>>,
     pub secret_vars: Option<collections::HashMap<String, String>>,
+    pub input_vars: Option<collections::HashMap<String, String>>,
 }
 
 impl GithubStepCommandRunner {
     pub fn new(
         env_vars: Option<collections::HashMap<String, String>>,
         secret_vars: Option<collections::HashMap<String, String>>,
+        input_vars: Option<collections::HashMap<String, String>>,
     ) -> Self {
         Self {
             env_vars,
             secret_vars,
+            input_vars,
         }
     }
 
@@ -45,6 +48,9 @@ impl GithubStepCommandRunner {
         };
         let github_vars_regex = r"\$\{\{\s*github\.(\w+)\s*\}\}";
         result = Self::replace_vars(&result, git_vars.to_owned(), github_vars_regex);
+
+        let input_vars_regex = r"\$\{\{\s*inputs\.(\w+)\s*\}\}";
+        result = Self::replace_vars(&result, self.input_vars.to_owned(), input_vars_regex);
 
         result
     }
