@@ -60,9 +60,49 @@ impl Workflow {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
+#[serde(untagged)]
+pub enum RunsOn {
+    Single(String),
+    Multiple(Vec<String>),
+}
+
+impl PartialEq<String> for RunsOn {
+    fn eq(&self, other: &String) -> bool {
+        match self {
+            RunsOn::Single(s) => s == other,
+            RunsOn::Multiple(v) => v.contains(other),
+        }
+    }
+}
+
+impl PartialEq<RunsOn> for String {
+    fn eq(&self, other: &RunsOn) -> bool {
+        other == self
+    }
+}
+
+impl PartialEq<Vec<String>> for RunsOn {
+    fn eq(&self, other: &Vec<String>) -> bool {
+        match self {
+            RunsOn::Single(s) => other.len() == 1 && other[0] == *s,
+            RunsOn::Multiple(v) => v == other,
+        }
+    }
+}
+
+impl PartialEq<RunsOn> for Vec<String> {
+    fn eq(&self, other: &RunsOn) -> bool {
+        match other {
+            RunsOn::Single(s) => self.len() == 1 && self[0] == *s,
+            RunsOn::Multiple(v) => self == v,
+        }
+    }
+}
+
+#[derive(Debug, Serialize, Deserialize)]
 pub struct Job {
     #[serde(rename = "runs-on")]
-    pub runs_on: String,
+    pub runs_on: RunsOn,
     pub steps: Vec<Step>,
 }
 

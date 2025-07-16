@@ -47,7 +47,35 @@ fn test_get_job() {
     let job = workflow.get_job("test_job").expect("Job not found");
 
     // Then: The job's runs-on field should match the expected value
-    assert_eq!(job.runs_on, "ubuntu-latest");
+    assert_eq!("ubuntu-latest".to_string(), job.runs_on);
+}
+
+#[test]
+fn test_get_job_with_multiple_tags_for_runs_on_should_still_parse_correctly() {
+    // Given: A YAML string representing a workflow with a job
+    let yaml_data = r#"
+    name: Test Workflow
+    on:
+      push:
+        branches:
+          - main
+    jobs:
+      test_job:
+        runs-on:
+            - tag1
+            - tag2
+        steps:
+          - name: Test Step
+            run: echo "Hello, world!"
+    "#;
+
+    // When: The workflow is parsed and a job is retrieved
+    let workflow = Workflow::from_yaml(yaml_data).expect("Failed to parse YAML");
+    let job = workflow.get_job("test_job").expect("Job not found");
+
+    // Then: The job's runs-on field should match the expected value
+    let expected: Vec<String> = vec!["tag1".to_string(), "tag2".to_string()];
+    assert_eq!(expected, job.runs_on);
 }
 
 #[test]
