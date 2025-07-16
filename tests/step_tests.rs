@@ -89,7 +89,7 @@ fn test_run_cmd_with_valid_command() {
         run: Some(String::from("Hello, world!")),
     };
     // Given: a command runner instance without any special params (env vars or secrets)
-    let command_runner = GithubStepCommandRunner::new(None, None);
+    let command_runner = GithubStepCommandRunner::new(None, None, None);
 
     // When: The method run_cmd is called
     let result = command_runner.run(&step);
@@ -110,7 +110,7 @@ fn test_run_cmd_with_invalid_command() {
         run: Some(String::from("Hello, world!")),
     };
     // Given: a command runner instance without any special params (env vars or secrets)
-    let command_runner = GithubStepCommandRunner::new(None, None);
+    let command_runner = GithubStepCommandRunner::new(None, None, None);
 
     // When: The method run_cmd is called
     let result = command_runner.run(&step);
@@ -131,7 +131,7 @@ fn test_run_cmd_with_no_run_command() {
         run: None,
     };
     // Given: a command runner instance without any special params (env vars or secrets)
-    let command_runner = GithubStepCommandRunner::new(None, None);
+    let command_runner = GithubStepCommandRunner::new(None, None, None);
 
     // When: The method run_cmd is called
     let result = command_runner.run(&step);

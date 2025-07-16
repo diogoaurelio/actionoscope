@@ -58,6 +58,13 @@ enum Commands {
         )]
         secrets_file: Option<String>,
 
+        #[arg(
+            long,
+            short = 'i',
+            help = "Path to the .env file that serves as the inputs required to run an action"
+        )]
+        inputs_file: Option<String>,
+
         /// Skip one or more steps
         #[arg(long, short = 'k', help = "Steps to skip")]
         skip_step: Vec<String>,
@@ -90,6 +97,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             from_step,
             to_step,
             secrets_file,
+            inputs_file,
             skip_step: steps_to_skip,
             ..
         } => run_command(
@@ -99,6 +107,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             from_step.clone(),
             to_step.clone(),
             secrets_file.clone(),
+            inputs_file.to_owned(),
             steps_to_skip.to_owned(),
         ),
         Commands::Ls { workflow_file } => ls_command(workflow_file.clone()),

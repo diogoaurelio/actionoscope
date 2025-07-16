@@ -9,5 +9,6 @@ pub struct RunJobConfig<'a> {
     pub to_step: Option<String>,
     pub env_vars: Option<HashMap<String, String>>,
     pub secret_vars: Option<HashMap<String, String>>,
+    pub input_vars: Option<HashMap<String, String>>,
     pub steps_to_skip: Vec<String>,
 }

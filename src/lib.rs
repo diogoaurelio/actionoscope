@@ -27,10 +27,12 @@ pub fn run_command(
     from_step: Option<String>,
     to_step: Option<String>,
     secrets_file: Option<String>,
+    inputs_file: Option<String>,
     steps_to_skip: Vec<String>,
 ) -> Result<(), Box<dyn std::error::Error>> {
     let workflow_files = find_workflow_files(workflow_file.clone())?;
     let secrets = load_env_vars(secrets_file.as_deref());
+    let inputs = load_env_vars(inputs_file.as_deref());
 
     info!(
         "Found workflow file(s): {}",
@@ -77,6 +79,7 @@ pub fn run_command(
             to_step: to_step.clone(),
             env_vars: workflow.env.clone(),
             secret_vars: secrets.clone(),
+            input_vars: inputs.to_owned(),
             steps_to_skip: steps_to_skip.to_owned(),
         };
 
@@ -88,8 +91,11 @@ pub fn run_command(
 
 fn run_jobs(config: RunJobConfig) -> Result<(), Box<dyn std::error::Error>> {
     let jobs = &config.jobs;
-    let command_runner =
-        GithubStepCommandRunner::new(config.env_vars.clone(), config.secret_vars.clone());
+    let command_runner = GithubStepCommandRunner::new(
+        config.env_vars.clone(),
+        config.secret_vars.clone(),
+        config.input_vars.to_owned(),
+    );
     for (index, job) in jobs.iter().enumerate() {
         info!("Running job '{}'", &config.job_names[index]);
         if config.step.is_some() {
