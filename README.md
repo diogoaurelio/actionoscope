@@ -42,10 +42,10 @@ git clone git@github.com:diogoaurelio/actionoscope.git
 
 cd actionoscope
 # build the project & copy the project to your local bin so you can run it from anywhere as > actionoscope
-cargo clean && cargo build --release && cp target/release/actionoscope ~/.local/bin/
+cargo clean && cargo build --release && cp target/release/actionoscope ~/.local/bin/as
 
 # fun
-actionoscope --help
+as --help
 ```
 
 ## Usage
@@ -53,49 +53,49 @@ actionoscope --help
 ### Running a Single Step
 To run a single step from a workflow file:
 ```shell
-actionoscope run --workflow-file <path_to_workflow_file> --job <job_name> --step <step_name>
+as run --workflow-file <path_to_workflow_file> --job <job_name> --step <step_name>
 ```
 Or with short notation:
 ```shell
-actionoscope run -w <path_to_workflow_file> -j <job_name> -s <step_name>
+as run -w <path_to_workflow_file> -j <job_name> -s <step_name>
 ```
 
 ### Running All Steps Since a given step
 To run all steps from a specified step:
 ```shell
-actionoscope run --workflow-file <path_to_workflow_file> --job <job_name> --from-step <step_name>
+as run --workflow-file <path_to_workflow_file> --job <job_name> --from-step <step_name>
 ```
 
 Or with short notation:
 ```shell
-actionoscope run -w <path_to_workflow_file> -j <job_name> -f <starting_step_name>
+as run -w <path_to_workflow_file> -j <job_name> -f <starting_step_name>
 ```
 
 ### Running All Steps from a given step until another given step
 
 To run a subset of steps:
 ```shell
-actionoscope run --workflow-file <name_of_workflow_file> --job <job_name> --from-step <starting_step_name> --to-step <final_step_name>
+as run --workflow-file <name_of_workflow_file> --job <job_name> --from-step <starting_step_name> --to-step <final_step_name>
 ```
 Note that the provided steps are inclusive - they will also be run.
 
 Or with short notation:
 ```shell
-actionoscope run -w <name_of_workflow_file> -j <job_name> -f <starting_step_name> -t <final_step_name>
+as run -w <name_of_workflow_file> -j <job_name> -f <starting_step_name> -t <final_step_name>
 ```
 
 ### Running All Steps except some that should be skipped
 
 To run some steps except a few that should be skipped, you can use the `--skip-step` flag. You can specify multiple steps to skip by using the flag multiple times. For example, to skip `step-x` and `step-y`:
 ```shell
-actionoscope run --workflow-file <name_of_workflow_file> --job <job_name> --skip-step <step-x> --skip-step <step-y>
+as run --workflow-file <name_of_workflow_file> --job <job_name> --skip-step <step-x> --skip-step <step-y>
 ```
 
 Note that the match is done by name or id, so you can use either the name of the step or its id as defined in the workflow file.
 
 Or with short notation:
 ```shell
-actionoscope run -w <name_of_workflow_file> -j <job_name> -k <step-x> -k <step-y>
+as run -w <name_of_workflow_file> -j <job_name> -k <step-x> -k <step-y>
 ```
 
 ### Providing secrets variables
@@ -103,12 +103,12 @@ actionoscope run -w <name_of_workflow_file> -j <job_name> -k <step-x> -k <step-y
 In case you use secrets in your workflow (for example `${{ secrets.MY_VAR }}`), you can provide them using the `--secrets` flag. The secrets should be provided in the format `SECRET_NAME=SECRET_VALUE`. For example:
 
 ```shell
-actionoscope run --workflow-file <name_of_workflow_file> -j <job_name> --secrets-file .env
+as run --workflow-file <name_of_workflow_file> -j <job_name> --secrets-file .env
 ```
 
 Or with short notation:
 ```shell
-actionoscope run -w <name_of_workflow_file> -j <job_name> -e .env
+as run -w <name_of_workflow_file> -j <job_name> -e .env
 ```
 
 ### Examples
@@ -134,10 +134,10 @@ jobs:
 ```
 To run the Run tests step from the example workflow file:
 ```shell
-actionoscope run --workflow-file example_workflow.yml --job build --step second
+as run --workflow-file example_workflow.yml --job build --step second
 
 # or using just short notation
-actionoscope run -w example_workflow.yml -j build -s second
+as run -w example_workflow.yml -j build -s second
 ```
 
 ## Development
@@ -147,7 +147,7 @@ To run the tests for the project:
 RUST_BACKTRACE=1 cargo test --all-features
 
 # OR, sprinkling a bit of inception:
-actionoscope run -w on.pr.yaml -j build -s test
+as run -w on.pr.yaml -j build -s test
 
 ```
 
@@ -155,7 +155,7 @@ actionoscope run -w on.pr.yaml -j build -s test
 
 To run the full CI pipeline (linter checks and tests), you can simply run:
 ```shell
-actionoscope run -w on.pr.yaml
+as run -w on.pr.yaml
 ```
 
 ## License
